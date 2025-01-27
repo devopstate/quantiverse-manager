@@ -17,7 +17,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { Plus, ArrowUpDown } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Product {
   id: number;
@@ -27,6 +35,7 @@ interface Product {
   sellingPrice: number;
   quantity: number;
   status: string;
+  createdAt: Date;
 }
 
 const Inventory = () => {
@@ -39,6 +48,14 @@ const Inventory = () => {
     sellingPrice: "",
     quantity: "",
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof Product>("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const validateNumber = (value: string, fieldName: string): boolean => {
     const num = Number(value);
@@ -62,11 +79,9 @@ const Inventory = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    // Only allow numbers and decimal point for price fields
     if ((field === 'purchasePrice' || field === 'sellingPrice') && value !== '') {
       if (!/^\d*\.?\d*$/.test(value)) return;
     }
-    // Only allow numbers for quantity
     if (field === 'quantity' && value !== '') {
       if (!/^\d*$/.test(value)) return;
     }
@@ -83,7 +98,6 @@ const Inventory = () => {
       return;
     }
 
-    // Validate numeric fields
     if (!validateNumber(newProduct.purchasePrice, "Purchase Price")) return;
     if (!validateNumber(newProduct.sellingPrice, "Selling Price")) return;
     if (!validateNumber(newProduct.quantity, "Quantity")) return;
@@ -96,6 +110,7 @@ const Inventory = () => {
       sellingPrice: parseFloat(newProduct.sellingPrice),
       quantity: parseInt(newProduct.quantity),
       status: parseInt(newProduct.quantity) > 0 ? "In-Stock" : "Out-of-Stock",
+      createdAt: new Date(),
     };
 
     setProducts([...products, product]);
@@ -112,6 +127,25 @@ const Inventory = () => {
       description: "Product added successfully",
     });
   };
+
+  const handleSort = (field: keyof Product) => {
+    setSortDirection(current => current === "asc" ? "desc" : "asc");
+    setSortField(field);
+  };
+
+  // Sort and paginate products
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortDirection === "asc") {
+      return a[sortField] > b[sortField] ? 1 : -1;
+    }
+    return a[sortField] < b[sortField] ? 1 : -1;
+  });
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const paginatedProducts = sortedProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="p-6">
@@ -177,16 +211,28 @@ const Inventory = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Category</TableHead>
-            <TableHead>Product Title</TableHead>
-            <TableHead>Purchase Price (₹)</TableHead>
-            <TableHead>Selling Price (₹)</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead onClick={() => handleSort("category")} className="cursor-pointer">
+              Category <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort("title")} className="cursor-pointer">
+              Product Title <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort("purchasePrice")} className="cursor-pointer">
+              Purchase Price (₹) <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort("sellingPrice")} className="cursor-pointer">
+              Selling Price (₹) <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort("quantity")} className="cursor-pointer">
+              Quantity <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort("status")} className="cursor-pointer">
+              Status <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product) => (
+          {paginatedProducts.map((product) => (
             <TableRow key={product.id}>
               <TableCell className="capitalize">{product.category}</TableCell>
               <TableCell>{product.title}</TableCell>
@@ -198,6 +244,37 @@ const Inventory = () => {
           ))}
         </TableBody>
       </Table>
+
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(page)}
+                    isActive={currentPage === page}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 };
