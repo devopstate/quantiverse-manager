@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 
 interface Product {
@@ -40,6 +40,39 @@ const Inventory = () => {
     quantity: "",
   });
 
+  const validateNumber = (value: string, fieldName: string): boolean => {
+    const num = Number(value);
+    if (isNaN(num)) {
+      toast({
+        title: "Invalid Input",
+        description: `${fieldName} must be a valid number`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (num <= 0) {
+      toast({
+        title: "Invalid Input",
+        description: `${fieldName} must be greater than 0`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    // Only allow numbers and decimal point for price fields
+    if ((field === 'purchasePrice' || field === 'sellingPrice') && value !== '') {
+      if (!/^\d*\.?\d*$/.test(value)) return;
+    }
+    // Only allow numbers for quantity
+    if (field === 'quantity' && value !== '') {
+      if (!/^\d*$/.test(value)) return;
+    }
+    setNewProduct({ ...newProduct, [field]: value });
+  };
+
   const handleAddProduct = () => {
     if (!newProduct.title || !newProduct.category) {
       toast({
@@ -49,6 +82,11 @@ const Inventory = () => {
       });
       return;
     }
+
+    // Validate numeric fields
+    if (!validateNumber(newProduct.purchasePrice, "Purchase Price")) return;
+    if (!validateNumber(newProduct.sellingPrice, "Selling Price")) return;
+    if (!validateNumber(newProduct.quantity, "Quantity")) return;
 
     const product: Product = {
       id: products.length + 1,
@@ -100,34 +138,34 @@ const Inventory = () => {
           placeholder="Product Title"
           value={newProduct.title}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, title: e.target.value })
+            handleInputChange("title", e.target.value)
           }
         />
         
         <Input
-          type="number"
+          type="text"
           placeholder="Purchase Price (₹)"
           value={newProduct.purchasePrice}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, purchasePrice: e.target.value })
+            handleInputChange("purchasePrice", e.target.value)
           }
         />
         
         <Input
-          type="number"
+          type="text"
           placeholder="Selling Price (₹)"
           value={newProduct.sellingPrice}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, sellingPrice: e.target.value })
+            handleInputChange("sellingPrice", e.target.value)
           }
         />
         
         <Input
-          type="number"
+          type="text"
           placeholder="Quantity"
           value={newProduct.quantity}
           onChange={(e) =>
-            setNewProduct({ ...newProduct, quantity: e.target.value })
+            handleInputChange("quantity", e.target.value)
           }
         />
       </div>
