@@ -5,6 +5,10 @@ import Header from "@/components/Header";
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
@@ -13,7 +17,7 @@ const Index = () => {
           <p className="text-gray-600">Manage your inventory with ease</p>
         </div>
         <div className="w-full max-w-sm bg-white rounded-lg shadow-md p-6">
-          <LoginForm />
+          <LoginForm onLoginSuccess={handleLoginSuccess} />
         </div>
       </div>
     );
