@@ -1,12 +1,15 @@
 import { useState } from "react";
+import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import LoginForm from "@/components/LoginForm";
 import Header from "@/components/Header";
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
+    navigate("/dashboard");
   };
 
   if (!isLoggedIn) {
@@ -26,10 +29,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        {/* Dashboard content will be added here */}
-      </main>
+      <Outlet />
     </div>
   );
 };
