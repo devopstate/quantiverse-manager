@@ -1,25 +1,11 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Edit, Save } from "lucide-react";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Product } from "@/types/inventory";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ProductTableHeader } from "./table/TableHeader";
+import { EditableCell } from "./table/EditableCell";
+import { ActionButton } from "./table/ActionButton";
 
 interface ProductTableProps {
   products: Product[];
@@ -32,8 +18,6 @@ interface ProductTableProps {
 export const ProductTable = ({
   products,
   onSort,
-  sortField,
-  sortDirection,
   onUpdateProduct,
 }: ProductTableProps) => {
   const { toast } = useToast();
@@ -45,14 +29,14 @@ export const ProductTable = ({
     setEditingValues(product);
   };
 
-  const handleSave = (product: Product) => {
+  const validateEditingValues = () => {
     if (!editingValues.title?.trim()) {
       toast({
         title: "Invalid Input",
         description: "Product title cannot be empty",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (!editingValues.category?.trim()) {
@@ -61,7 +45,7 @@ export const ProductTable = ({
         description: "Category must be selected",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (editingValues.purchasePrice && editingValues.purchasePrice <= 0) {
@@ -70,7 +54,7 @@ export const ProductTable = ({
         description: "Purchase price must be greater than 0",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (editingValues.sellingPrice && editingValues.sellingPrice <= 0) {
@@ -79,7 +63,7 @@ export const ProductTable = ({
         description: "Selling price must be greater than 0",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (editingValues.quantity && editingValues.quantity < 0) {
@@ -88,8 +72,14 @@ export const ProductTable = ({
         description: "Quantity cannot be negative",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleSave = (product: Product) => {
+    if (!validateEditingValues()) return;
 
     const updatedProduct = {
       ...product,
@@ -114,6 +104,7 @@ export const ProductTable = ({
     if (field === 'quantity' && value !== '') {
       if (!/^\d*$/.test(value)) return;
     }
+    
     setEditingValues({ 
       ...editingValues, 
       [field]: field === 'quantity' ? parseInt(value) : 
@@ -124,120 +115,61 @@ export const ProductTable = ({
 
   return (
     <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead onClick={() => onSort("createdAt")} className="cursor-pointer">
-            Date <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead onClick={() => onSort("category")} className="cursor-pointer">
-            Category <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead onClick={() => onSort("title")} className="cursor-pointer">
-            Product Title <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead onClick={() => onSort("purchasePrice")} className="cursor-pointer">
-            Purchase Price (₹) <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead onClick={() => onSort("sellingPrice")} className="cursor-pointer">
-            Selling Price (₹) <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead onClick={() => onSort("quantity")} className="cursor-pointer">
-            Quantity <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead onClick={() => onSort("status")} className="cursor-pointer">
-            Status <ArrowUpDown className="inline h-4 w-4" />
-          </TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
+      <ProductTableHeader onSort={onSort} />
       <TableBody>
         {products.map((product) => (
           <TableRow key={product.id}>
             <TableCell>{format(product.createdAt, 'dd/MM/yyyy')}</TableCell>
             <TableCell>
-              {editingId === product.id ? (
-                <Select
-                  value={editingValues.category || product.category}
-                  onValueChange={(value) => handleInputChange("category", value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="electronics">Electronics</SelectItem>
-                    <SelectItem value="clothing">Clothing</SelectItem>
-                    <SelectItem value="food">Food</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className="capitalize">{product.category}</span>
-              )}
+              <EditableCell
+                isEditing={editingId === product.id}
+                type="category"
+                value={editingValues.category || product.category}
+                onChange={(value) => handleInputChange("category", value)}
+              />
             </TableCell>
             <TableCell>
-              {editingId === product.id ? (
-                <Input
-                  value={editingValues.title || product.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                />
-              ) : (
-                product.title
-              )}
+              <EditableCell
+                isEditing={editingId === product.id}
+                type="text"
+                value={editingValues.title || product.title}
+                onChange={(value) => handleInputChange("title", value)}
+              />
             </TableCell>
             <TableCell>
-              {editingId === product.id ? (
-                <Input
-                  type="text"
-                  value={editingValues.purchasePrice || product.purchasePrice}
-                  onChange={(e) => handleInputChange("purchasePrice", e.target.value)}
-                  className="w-24"
-                />
-              ) : (
-                `₹${product.purchasePrice}`
-              )}
+              <EditableCell
+                isEditing={editingId === product.id}
+                type="number"
+                value={editingValues.purchasePrice || product.purchasePrice}
+                onChange={(value) => handleInputChange("purchasePrice", value)}
+                className="w-24"
+              />
             </TableCell>
             <TableCell>
-              {editingId === product.id ? (
-                <Input
-                  type="text"
-                  value={editingValues.sellingPrice || product.sellingPrice}
-                  onChange={(e) => handleInputChange("sellingPrice", e.target.value)}
-                  className="w-24"
-                />
-              ) : (
-                `₹${product.sellingPrice}`
-              )}
+              <EditableCell
+                isEditing={editingId === product.id}
+                type="number"
+                value={editingValues.sellingPrice || product.sellingPrice}
+                onChange={(value) => handleInputChange("sellingPrice", value)}
+                className="w-24"
+              />
             </TableCell>
             <TableCell>
-              {editingId === product.id ? (
-                <Input
-                  type="text"
-                  value={editingValues.quantity || product.quantity}
-                  onChange={(e) => handleInputChange("quantity", e.target.value)}
-                  className="w-24"
-                />
-              ) : (
-                product.quantity
-              )}
+              <EditableCell
+                isEditing={editingId === product.id}
+                type="number"
+                value={editingValues.quantity || product.quantity}
+                onChange={(value) => handleInputChange("quantity", value)}
+                className="w-24"
+              />
             </TableCell>
             <TableCell>{product.status}</TableCell>
             <TableCell>
-              {editingId === product.id ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSave(product)}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(product)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
+              <ActionButton
+                isEditing={editingId === product.id}
+                onEdit={() => handleEdit(product)}
+                onSave={() => handleSave(product)}
+              />
             </TableCell>
           </TableRow>
         ))}
