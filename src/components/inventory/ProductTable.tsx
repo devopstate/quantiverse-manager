@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Edit, Save } from "lucide-react";
 import { Product } from "@/types/inventory";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProductTableProps {
   products: Product[];
@@ -39,6 +46,24 @@ export const ProductTable = ({
   };
 
   const handleSave = (product: Product) => {
+    if (!editingValues.title?.trim()) {
+      toast({
+        title: "Invalid Input",
+        description: "Product title cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingValues.category?.trim()) {
+      toast({
+        title: "Invalid Input",
+        description: "Category must be selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (editingValues.purchasePrice && editingValues.purchasePrice <= 0) {
       toast({
         title: "Invalid Input",
@@ -89,7 +114,12 @@ export const ProductTable = ({
     if (field === 'quantity' && value !== '') {
       if (!/^\d*$/.test(value)) return;
     }
-    setEditingValues({ ...editingValues, [field]: field === 'quantity' ? parseInt(value) : parseFloat(value) });
+    setEditingValues({ 
+      ...editingValues, 
+      [field]: field === 'quantity' ? parseInt(value) : 
+               (field === 'purchasePrice' || field === 'sellingPrice') ? parseFloat(value) : 
+               value 
+    });
   };
 
   return (
@@ -124,8 +154,35 @@ export const ProductTable = ({
         {products.map((product) => (
           <TableRow key={product.id}>
             <TableCell>{format(product.createdAt, 'dd/MM/yyyy')}</TableCell>
-            <TableCell className="capitalize">{product.category}</TableCell>
-            <TableCell>{product.title}</TableCell>
+            <TableCell>
+              {editingId === product.id ? (
+                <Select
+                  value={editingValues.category || product.category}
+                  onValueChange={(value) => handleInputChange("category", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="electronics">Electronics</SelectItem>
+                    <SelectItem value="clothing">Clothing</SelectItem>
+                    <SelectItem value="food">Food</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="capitalize">{product.category}</span>
+              )}
+            </TableCell>
+            <TableCell>
+              {editingId === product.id ? (
+                <Input
+                  value={editingValues.title || product.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                />
+              ) : (
+                product.title
+              )}
+            </TableCell>
             <TableCell>
               {editingId === product.id ? (
                 <Input
