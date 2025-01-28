@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus
+import { Plus } from "lucide-react";
 import { Product } from "@/types/inventory";
 
 interface ProductFormProps {
