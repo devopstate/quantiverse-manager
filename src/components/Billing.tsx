@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Product } from "@/types/inventory";
+import { BillItem } from "@/types/billing";
 import { BillingForm } from "./billing/BillingForm";
 import { BillingTable } from "./billing/BillingTable";
 import { useToast } from "@/hooks/use-toast";
