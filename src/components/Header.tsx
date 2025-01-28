@@ -19,6 +19,9 @@ const Header = () => {
           <Button variant="ghost" onClick={() => navigate("/inventory")}>
             Inventory
           </Button>
+           <Button variant="ghost" onClick={() => navigate("/billing")}>
+            Billing
+          </Button>
           <Button variant="ghost" onClick={() => navigate("/sales")}>
             Sales
           </Button>
