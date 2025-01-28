@@ -36,10 +36,18 @@ export const ProductForm = ({ onAddProduct }: ProductFormProps) => {
       });
       return false;
     }
-    if (num <= 0) {
+    if (fieldName !== "Quantity" && num <= 0) {
       toast({
         title: "Invalid Input",
         description: `${fieldName} must be greater than 0`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (fieldName === "Quantity" && num < 0) {
+      toast({
+        title: "Invalid Input",
+        description: "Quantity cannot be negative",
         variant: "destructive",
       });
       return false;

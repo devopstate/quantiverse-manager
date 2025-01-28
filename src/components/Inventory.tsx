@@ -16,7 +16,7 @@ const Inventory = () => {
     const product: Product = {
       id: products.length + 1,
       ...newProductData,
-      status: newProductData.quantity > 0 ? "In-Stock" : "Out-of-Stock",
+      status: newProductData.quantity === 0 ? "Out-of-Stock" : "In-Stock",
       createdAt: new Date(),
     };
 
@@ -29,8 +29,12 @@ const Inventory = () => {
   };
 
   const handleUpdateProduct = (updatedProduct: Product) => {
+    const productWithStatus = {
+      ...updatedProduct,
+      status: updatedProduct.quantity === 0 ? "Out-of-Stock" : "In-Stock"
+    };
     setProducts(products.map(p => 
-      p.id === updatedProduct.id ? updatedProduct : p
+      p.id === productWithStatus.id ? productWithStatus : p
     ));
   };
 

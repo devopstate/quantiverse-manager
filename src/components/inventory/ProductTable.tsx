@@ -57,10 +57,10 @@ export const ProductTable = ({
       return;
     }
 
-    if (editingValues.quantity && editingValues.quantity <= 0) {
+    if (editingValues.quantity && editingValues.quantity < 0) {
       toast({
         title: "Invalid Input",
-        description: "Quantity must be greater than 0",
+        description: "Quantity cannot be negative",
         variant: "destructive",
       });
       return;
@@ -69,7 +69,7 @@ export const ProductTable = ({
     const updatedProduct = {
       ...product,
       ...editingValues,
-      status: editingValues.quantity && editingValues.quantity > 0 ? "In-Stock" : "Out-of-Stock",
+      status: editingValues.quantity === 0 ? "Out-of-Stock" : "In-Stock",
     };
 
     onUpdateProduct(updatedProduct);
