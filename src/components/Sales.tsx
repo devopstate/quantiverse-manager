@@ -28,6 +28,12 @@ const Sales = () => {
     return calculateTotalSales() / transactions.length;
   };
 
+  const calculatePnL = (purchasePrice: number, sellingPrice: number, quantity: number) => {
+    const totalCost = purchasePrice * quantity;
+    const totalRevenue = sellingPrice * quantity;
+    return totalRevenue - totalCost;
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Sales Overview</h1>
@@ -59,22 +65,48 @@ const Sales = () => {
             <TableRow>
               <TableHead>Transaction ID</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Items</TableHead>
+              <TableHead>Product Details</TableHead>
+              <TableHead className="text-right">Purchase Price</TableHead>
+              <TableHead className="text-right">Selling Price</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">P&L</TableHead>
               <TableHead className="text-right">Total Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>{transaction.id}</TableCell>
-                <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                <TableCell>{transaction.items.length} items</TableCell>
-                <TableCell className="text-right">₹{transaction.total.toFixed(2)}</TableCell>
-              </TableRow>
+              <>
+                {transaction.items.map((item, itemIndex) => (
+                  <TableRow key={`${transaction.id}-${itemIndex}`}>
+                    {itemIndex === 0 && (
+                      <TableCell rowSpan={transaction.items.length}>
+                        {transaction.id}
+                      </TableCell>
+                    )}
+                    {itemIndex === 0 && (
+                      <TableCell rowSpan={transaction.items.length}>
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </TableCell>
+                    )}
+                    <TableCell>{item.productTitle}</TableCell>
+                    <TableCell className="text-right">₹{item.purchasePrice.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">₹{item.sellingPrice.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell className="text-right">
+                      ₹{calculatePnL(item.purchasePrice, item.sellingPrice, item.quantity).toFixed(2)}
+                    </TableCell>
+                    {itemIndex === 0 && (
+                      <TableCell className="text-right" rowSpan={transaction.items.length}>
+                        ₹{transaction.total.toFixed(2)}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </>
             ))}
             {transactions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   No transactions found
                 </TableCell>
               </TableRow>

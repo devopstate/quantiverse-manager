@@ -32,6 +32,20 @@ const Billing = () => {
     return currentBill.reduce((total, item) => total + (item.quantity * item.sellingPrice), 0);
   };
 
+  const updateInventory = () => {
+    const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
+    
+    currentBill.forEach(billItem => {
+      const productIndex = products.findIndex(p => p.id === billItem.productId);
+      if (productIndex !== -1) {
+        products[productIndex].quantity -= billItem.quantity;
+        products[productIndex].status = products[productIndex].quantity === 0 ? "Out-of-Stock" : "In-Stock";
+      }
+    });
+
+    localStorage.setItem('products', JSON.stringify(products));
+  };
+
   const handleCompleteBill = () => {
     if (currentBill.length === 0) {
       toast({
@@ -50,7 +64,10 @@ const Billing = () => {
       status: 'completed'
     };
 
-    // In a real app, this would be saved to a database
+    // Update inventory
+    updateInventory();
+
+    // Save transaction
     const existingTransactions = JSON.parse(localStorage.getItem('billingTransactions') || '[]');
     localStorage.setItem('billingTransactions', JSON.stringify([...existingTransactions, transaction]));
 

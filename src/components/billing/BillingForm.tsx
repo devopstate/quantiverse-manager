@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Product } from "@/types/inventory";
 import { BillItem } from "@/types/billing";
 import { Button } from "@/components/ui/button";
@@ -22,24 +22,9 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
 
-  // In a real app, this would fetch from your database
-  useEffect(() => {
-    // Temporary mock data
-    setProducts([
-      {
-        id: 1,
-        category: "electronics",
-        title: "Sample Product",
-        purchasePrice: 100,
-        sellingPrice: 150,
-        quantity: 10,
-        status: "In-Stock",
-        createdAt: new Date(),
-      },
-    ]);
-  }, []);
+  // Get products from localStorage
+  const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
 
   const handleProductSelect = (productId: string) => {
     const product = products.find(p => p.id === parseInt(productId));
@@ -101,6 +86,7 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
     onAddToBill({
       productId: selectedProduct.id,
       productTitle: selectedProduct.title,
+      purchasePrice: selectedProduct.purchasePrice,
       sellingPrice: priceNum,
       quantity: qtyNum,
       total: qtyNum * priceNum,

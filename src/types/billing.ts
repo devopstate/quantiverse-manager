@@ -1,6 +1,7 @@
 export interface BillItem {
   productId: number;
   productTitle: string;
+  purchasePrice: number;
   sellingPrice: number;
   quantity: number;
   total: number;
