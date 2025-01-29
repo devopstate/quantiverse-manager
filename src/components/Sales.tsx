@@ -14,9 +14,16 @@ import {
 const Sales = () => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
 
+  // Load transactions from localStorage on component mount
   useEffect(() => {
-    const storedTransactions = JSON.parse(localStorage.getItem('billingTransactions') || '[]');
-    setTransactions(storedTransactions);
+    const storedTransactions = localStorage.getItem('billingTransactions');
+    if (storedTransactions) {
+      const parsedTransactions = JSON.parse(storedTransactions).map((transaction: any) => ({
+        ...transaction,
+        date: new Date(transaction.date)
+      }));
+      setTransactions(parsedTransactions);
+    }
   }, []);
 
   const calculateTotalSales = () => {
