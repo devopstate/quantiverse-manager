@@ -20,7 +20,7 @@ const Sales = () => {
   }, []);
 
   const calculateTotalSales = () => {
-    return transactions.reduce((total, transaction) => total + transaction.total, 0);
+    return transactions.reduce((total, transaction) => total + (transaction.total || 0), 0);
   };
 
   const calculateDailyAverage = () => {
@@ -29,9 +29,15 @@ const Sales = () => {
   };
 
   const calculatePnL = (purchasePrice: number, sellingPrice: number, quantity: number) => {
+    if (!purchasePrice || !sellingPrice || !quantity) return 0;
     const totalCost = purchasePrice * quantity;
     const totalRevenue = sellingPrice * quantity;
     return totalRevenue - totalCost;
+  };
+
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || isNaN(value)) return "₹0.00";
+    return `₹${value.toFixed(2)}`;
   };
 
   return (
@@ -43,7 +49,7 @@ const Sales = () => {
             <ChartLine className="h-8 w-8 text-primary" />
             <div>
               <p className="text-sm text-gray-500">Total Sales</p>
-              <p className="text-2xl font-bold">₹{calculateTotalSales().toFixed(2)}</p>
+              <p className="text-2xl font-bold">{formatCurrency(calculateTotalSales())}</p>
             </div>
           </div>
         </Card>
@@ -52,7 +58,7 @@ const Sales = () => {
             <Calendar className="h-8 w-8 text-primary" />
             <div>
               <p className="text-sm text-gray-500">Daily Average</p>
-              <p className="text-2xl font-bold">₹{calculateDailyAverage().toFixed(2)}</p>
+              <p className="text-2xl font-bold">{formatCurrency(calculateDailyAverage())}</p>
             </div>
           </div>
         </Card>
@@ -89,15 +95,15 @@ const Sales = () => {
                       </TableCell>
                     )}
                     <TableCell>{item.productTitle}</TableCell>
-                    <TableCell className="text-right">₹{item.purchasePrice.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">₹{item.sellingPrice.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.purchasePrice)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.sellingPrice)}</TableCell>
                     <TableCell className="text-right">{item.quantity}</TableCell>
                     <TableCell className="text-right">
-                      ₹{calculatePnL(item.purchasePrice, item.sellingPrice, item.quantity).toFixed(2)}
+                      {formatCurrency(calculatePnL(item.purchasePrice, item.sellingPrice, item.quantity))}
                     </TableCell>
                     {itemIndex === 0 && (
                       <TableCell className="text-right" rowSpan={transaction.items.length}>
-                        ₹{transaction.total.toFixed(2)}
+                        {formatCurrency(transaction.total)}
                       </TableCell>
                     )}
                   </TableRow>
