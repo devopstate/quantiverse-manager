@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Product } from "@/types/inventory";
 import { ProductForm } from "./inventory/ProductForm";
 import { ProductTable } from "./inventory/ProductTable";
@@ -12,15 +12,30 @@ const Inventory = () => {
   
   const itemsPerPage = 5;
 
+  // Load products from localStorage on component mount
+  useEffect(() => {
+    const savedProducts = localStorage.getItem('products');
+    if (savedProducts) {
+      const parsedProducts = JSON.parse(savedProducts).map((product: any) => ({
+        ...product,
+        createdAt: new Date(product.createdAt)
+      }));
+      setProducts(parsedProducts);
+    }
+  }, []);
+
   const handleAddProduct = (newProductData: Omit<Product, 'id' | 'status' | 'createdAt'>) => {
+    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
     const product: Product = {
-      id: products.length + 1,
+      id: newId,
       ...newProductData,
       status: newProductData.quantity === 0 ? "Out-of-Stock" : "In-Stock",
       createdAt: new Date(),
     };
 
-    setProducts([...products, product]);
+    const updatedProducts = [...products, product];
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
   };
 
   const handleSort = (field: keyof Product) => {
@@ -33,9 +48,11 @@ const Inventory = () => {
       ...updatedProduct,
       status: updatedProduct.quantity === 0 ? "Out-of-Stock" : "In-Stock"
     };
-    setProducts(products.map(p => 
+    const updatedProducts = products.map(p => 
       p.id === productWithStatus.id ? productWithStatus : p
-    ));
+    );
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
   };
 
   // Sort and paginate products

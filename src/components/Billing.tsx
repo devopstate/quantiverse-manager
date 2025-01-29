@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Product } from "@/types/inventory";
 import { BillItem, BillingTransaction } from "@/types/billing";
 import { BillingForm } from "./billing/BillingForm";
@@ -12,8 +12,18 @@ const Billing = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Load any saved current bill from localStorage
+  useEffect(() => {
+    const savedBill = localStorage.getItem('currentBill');
+    if (savedBill) {
+      setCurrentBill(JSON.parse(savedBill));
+    }
+  }, []);
+
   const handleAddToBill = (billItem: BillItem) => {
-    setCurrentBill([...currentBill, billItem]);
+    const updatedBill = [...currentBill, billItem];
+    setCurrentBill(updatedBill);
+    localStorage.setItem('currentBill', JSON.stringify(updatedBill));
     toast({
       title: "Success",
       description: "Item added to bill",
@@ -21,7 +31,9 @@ const Billing = () => {
   };
 
   const handleRemoveFromBill = (index: number) => {
-    setCurrentBill(currentBill.filter((_, i) => i !== index));
+    const updatedBill = currentBill.filter((_, i) => i !== index);
+    setCurrentBill(updatedBill);
+    localStorage.setItem('currentBill', JSON.stringify(updatedBill));
     toast({
       title: "Success",
       description: "Item removed from bill",
@@ -71,7 +83,10 @@ const Billing = () => {
     const existingTransactions = JSON.parse(localStorage.getItem('billingTransactions') || '[]');
     localStorage.setItem('billingTransactions', JSON.stringify([...existingTransactions, transaction]));
 
+    // Clear current bill
     setCurrentBill([]);
+    localStorage.removeItem('currentBill');
+    
     toast({
       title: "Success",
       description: "Bill completed successfully",
