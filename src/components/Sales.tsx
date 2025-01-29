@@ -42,6 +42,10 @@ const Sales = () => {
     return totalRevenue - totalCost;
   };
 
+  const calculateItemTotal = (sellingPrice: number, quantity: number) => {
+    return sellingPrice * quantity;
+  };
+
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined || isNaN(value)) return "₹0.00";
     return `₹${value.toFixed(2)}`;
@@ -82,8 +86,9 @@ const Sales = () => {
               <TableHead className="text-right">Purchase Price</TableHead>
               <TableHead className="text-right">Selling Price</TableHead>
               <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">Item Total</TableHead>
               <TableHead className="text-right">P&L</TableHead>
-              <TableHead className="text-right">Total Amount</TableHead>
+              <TableHead className="text-right">Total Billed Amt</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,6 +111,9 @@ const Sales = () => {
                     <TableCell className="text-right">{formatCurrency(item.sellingPrice)}</TableCell>
                     <TableCell className="text-right">{item.quantity}</TableCell>
                     <TableCell className="text-right">
+                      {formatCurrency(calculateItemTotal(item.sellingPrice, item.quantity))}
+                    </TableCell>
+                    <TableCell className="text-right">
                       {formatCurrency(calculatePnL(item.purchasePrice, item.sellingPrice, item.quantity))}
                     </TableCell>
                     {itemIndex === 0 && (
@@ -119,7 +127,7 @@ const Sales = () => {
             ))}
             {transactions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                <TableCell colSpan={9} className="text-center text-muted-foreground">
                   No transactions found
                 </TableCell>
               </TableRow>
