@@ -5,3 +5,11 @@ export interface BillItem {
   quantity: number;
   total: number;
 }
+
+export interface BillingTransaction {
+  id: string;
+  items: BillItem[];
+  total: number;
+  date: Date;
+  status: 'completed' | 'cancelled';
+}
