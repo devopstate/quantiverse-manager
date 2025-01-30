@@ -4,8 +4,9 @@ import { ChartLine, Calendar, Search } from "lucide-react";
 import { BillingTransaction } from "@/types/billing";
 import { Input } from "@/components/ui/input";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { addDays } from "date-fns";
+import { addDays, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -79,6 +80,33 @@ const Sales = () => {
     return `₹${value.toFixed(2)}`;
   };
 
+  const handlePresetRange = (preset: 'today' | 'week' | 'month' | 'all') => {
+    const today = new Date();
+    switch (preset) {
+      case 'today':
+        setDateRange({
+          from: startOfDay(today),
+          to: endOfDay(today)
+        });
+        break;
+      case 'week':
+        setDateRange({
+          from: startOfWeek(today),
+          to: endOfWeek(today)
+        });
+        break;
+      case 'month':
+        setDateRange({
+          from: startOfMonth(today),
+          to: endOfMonth(today)
+        });
+        break;
+      case 'all':
+        setDateRange(undefined);
+        break;
+    }
+  };
+
   const handleSort = (key: string) => {
     setSortConfig(current => ({
       key,
@@ -120,6 +148,8 @@ const Sales = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Sales Overview</h1>
+      
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card className="p-4">
           <div className="flex items-center space-x-4">
@@ -141,6 +171,7 @@ const Sales = () => {
         </Card>
       </div>
 
+      {/* Search and Date Filter */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -151,12 +182,45 @@ const Sales = () => {
             className="pl-8"
           />
         </div>
-        <DatePickerWithRange
-          date={dateRange}
-          onDateChange={setDateRange}
-        />
+        <div className="flex flex-col md:flex-row gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePresetRange('today')}
+            >
+              Today
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePresetRange('week')}
+            >
+              This Week
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePresetRange('month')}
+            >
+              This Month
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePresetRange('all')}
+            >
+              All Time
+            </Button>
+          </div>
+          <DatePickerWithRange
+            date={dateRange}
+            onDateChange={setDateRange}
+          />
+        </div>
       </div>
 
+      {/* Transactions Table */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
         <Table>
