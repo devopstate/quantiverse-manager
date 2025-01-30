@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Product } from "@/types/inventory";
 import { BillItem } from "@/types/billing";
 import { Button } from "@/components/ui/button";
@@ -34,10 +34,10 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   // Get products from localStorage with proper initialization
   const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
 
-  // Filter products based on search value, ensuring products is always an array
+  // Filter products based on search value
   const filteredProducts = products.filter(product => 
     product.title.toLowerCase().includes(searchValue.toLowerCase())
-  ) || [];
+  );
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
@@ -132,27 +132,25 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
                 onValueChange={setSearchValue}
               />
               <CommandEmpty>No products found.</CommandEmpty>
-              {filteredProducts.length > 0 && (
-                <CommandGroup className="max-h-[300px] overflow-y-auto">
-                  {filteredProducts.map((product) => (
-                    <CommandItem
-                      key={product.id}
-                      value={product.title}
-                      onSelect={() => handleProductSelect(product)}
-                      disabled={product.status === "Out-of-Stock"}
-                      className={cn(
-                        "flex items-center justify-between",
-                        product.status === "Out-of-Stock" && "opacity-50"
-                      )}
-                    >
-                      <span>{product.title}</span>
-                      {selectedProduct?.id === product.id && (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+              <CommandGroup>
+                {filteredProducts.map((product) => (
+                  <CommandItem
+                    key={product.id}
+                    value={product.title}
+                    onSelect={() => handleProductSelect(product)}
+                    disabled={product.status === "Out-of-Stock"}
+                    className={cn(
+                      "flex items-center justify-between",
+                      product.status === "Out-of-Stock" && "opacity-50"
+                    )}
+                  >
+                    <span>{product.title}</span>
+                    {selectedProduct?.id === product.id && (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             </Command>
           </PopoverContent>
         </Popover>
