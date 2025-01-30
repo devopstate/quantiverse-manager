@@ -24,20 +24,25 @@ const Sales = () => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
-  const [dateRange, setDateRange] = useState<DateRange>({
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
 
   // Load transactions from localStorage on component mount
   useEffect(() => {
-    const storedTransactions = localStorage.getItem('billingTransactions');
-    if (storedTransactions) {
-      const parsedTransactions = JSON.parse(storedTransactions).map((transaction: any) => ({
-        ...transaction,
-        date: new Date(transaction.date)
-      }));
-      setTransactions(parsedTransactions);
+    try {
+      const storedTransactions = localStorage.getItem('billingTransactions');
+      if (storedTransactions) {
+        const parsedTransactions = JSON.parse(storedTransactions).map((transaction: any) => ({
+          ...transaction,
+          date: new Date(transaction.date)
+        }));
+        setTransactions(parsedTransactions);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      setTransactions([]);
     }
   }, []);
 
@@ -58,6 +63,7 @@ const Sales = () => {
   };
 
   const calculateItemTotal = (sellingPrice: number, quantity: number) => {
+    if (!sellingPrice || !quantity) return 0;
     return sellingPrice * quantity;
   };
 
@@ -75,28 +81,31 @@ const Sales = () => {
 
   const filteredAndSortedTransactions = transactions
     .filter(transaction => {
-      // Date range filter
-      const transactionDate = new Date(transaction.date);
-      const isWithinDateRange = (!dateRange.from || transactionDate >= dateRange.from) &&
-                               (!dateRange.to || transactionDate <= dateRange.to);
+      // Date range filter with null checks
+      const transactionDate = transaction?.date ? new Date(transaction.date) : null;
+      const isWithinDateRange = 
+        !dateRange?.from || !dateRange?.to || !transactionDate ? true :
+        (transactionDate >= dateRange.from && transactionDate <= dateRange.to);
 
-      // Search filter - safely handle undefined values
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = transaction.items.some(item =>
-        (item.productTitle || '').toLowerCase().includes(searchLower) ||
-        (item.purchasePrice?.toString() || '').includes(searchLower) ||
-        (item.sellingPrice?.toString() || '').includes(searchLower) ||
-        (item.quantity?.toString() || '').includes(searchLower)
-      ) ||
-      (transaction.id || '').toLowerCase().includes(searchLower) ||
-      transaction.date.toLocaleDateString().includes(searchLower);
+      // Search filter with null checks
+      const searchLower = (searchTerm || '').toLowerCase();
+      const matchesSearch = 
+        !searchTerm ? true :
+        (transaction?.items || []).some(item =>
+          (item?.productTitle || '').toLowerCase().includes(searchLower) ||
+          (item?.purchasePrice?.toString() || '').includes(searchLower) ||
+          (item?.sellingPrice?.toString() || '').includes(searchLower) ||
+          (item?.quantity?.toString() || '').includes(searchLower)
+        ) ||
+        (transaction?.id || '').toLowerCase().includes(searchLower) ||
+        (transactionDate?.toLocaleDateString() || '').includes(searchLower);
 
       return isWithinDateRange && matchesSearch;
     })
     .sort((a, b) => {
       const direction = sortConfig.direction === 'asc' ? 1 : -1;
       if (sortConfig.key === 'date') {
-        return (new Date(a.date).getTime() - new Date(b.date).getTime()) * direction;
+        return ((new Date(a?.date || 0)).getTime() - (new Date(b?.date || 0)).getTime()) * direction;
       }
       return 0;
     });
