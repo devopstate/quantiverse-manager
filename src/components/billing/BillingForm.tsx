@@ -4,20 +4,14 @@ import { BillItem } from "@/types/billing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ShoppingCart } from "lucide-react";
 
 interface BillingFormProps {
   onAddToBill: (item: BillItem) => void;
@@ -28,24 +22,17 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
-  const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
 
   // Get products from localStorage with proper initialization and null check
   const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
 
-  // Filter products based on search value with null check
-  const filteredProducts = products?.filter(product => 
-    product?.title?.toLowerCase().includes(searchValue?.toLowerCase() || '')
-  ) || [];
-
-  const handleProductSelect = (product: Product) => {
+  const handleProductSelect = (productId: string) => {
+    const product = products.find(p => p?.id.toString() === productId);
     if (!product) return;
     
     setSelectedProduct(product);
     setSellingPrice(product.sellingPrice?.toString() || '');
     setQuantity("");
-    setOpen(false);
   };
 
   const validateInputs = () => {
@@ -109,55 +96,30 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
     setSelectedProduct(null);
     setQuantity("");
     setSellingPrice("");
-    setSearchValue("");
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div className="flex flex-col gap-2">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="justify-between"
-            >
-              {selectedProduct?.title || "Select product..."}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[300px] p-0">
-            <Command>
-              <CommandInput
-                placeholder="Search products..."
-                value={searchValue}
-                onValueChange={setSearchValue}
-              />
-              <CommandGroup>
-                {filteredProducts.length === 0 && (
-                  <CommandEmpty>No products found.</CommandEmpty>
-                )}
-                {filteredProducts.map((product) => (
-                  <CommandItem
-                    key={product?.id}
-                    value={product?.title}
-                    onSelect={() => handleProductSelect(product)}
-                    disabled={product?.status === "Out-of-Stock"}
-                    className={cn(
-                      "flex items-center justify-between",
-                      product?.status === "Out-of-Stock" && "opacity-50"
-                    )}
-                  >
-                    <span>{product?.title}</span>
-                    {selectedProduct?.id === product?.id && (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <Select
+          value={selectedProduct?.id?.toString()}
+          onValueChange={handleProductSelect}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select product..." />
+          </SelectTrigger>
+          <SelectContent>
+            {products.map((product) => (
+              <SelectItem
+                key={product?.id}
+                value={product?.id?.toString()}
+                disabled={product?.status === "Out-of-Stock"}
+              >
+                {product?.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {selectedProduct && (
           <span className="text-sm text-muted-foreground">
             Available: {selectedProduct?.quantity || 0} units
