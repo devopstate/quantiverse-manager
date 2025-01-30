@@ -31,10 +31,11 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Get products from localStorage
+  // Get products from localStorage with proper initialization
   const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
 
-  const filteredProducts = products.filter(product => 
+  // Filter products based on search value, ensuring products is always an array
+  const filteredProducts = (products || []).filter(product => 
     product.title.toLowerCase().includes(searchValue.toLowerCase())
   );
 
