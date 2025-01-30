@@ -9,7 +9,7 @@ interface BillingTableProps {
   total: number;
 }
 
-export const BillingTable = ({ items, onRemoveItem, total }: BillingTableProps) => {
+export const BillingTable = ({ items = [], onRemoveItem, total = 0 }: BillingTableProps) => {
   return (
     <div>
       <Table>
@@ -23,37 +23,37 @@ export const BillingTable = ({ items, onRemoveItem, total }: BillingTableProps) 
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item, index) => (
+          {items?.map((item, index) => (
             <TableRow key={index}>
-              <TableCell>{item.productTitle}</TableCell>
-              <TableCell className="text-right">{item.sellingPrice.toFixed(2)}</TableCell>
-              <TableCell className="text-right">{item.quantity}</TableCell>
-              <TableCell className="text-right">{item.total.toFixed(2)}</TableCell>
+              <TableCell>{item?.productTitle}</TableCell>
+              <TableCell className="text-right">{(item?.sellingPrice || 0).toFixed(2)}</TableCell>
+              <TableCell className="text-right">{item?.quantity}</TableCell>
+              <TableCell className="text-right">{(item?.total || 0).toFixed(2)}</TableCell>
               <TableCell>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onRemoveItem(index)}
+                  onClick={() => onRemoveItem?.(index)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </TableCell>
             </TableRow>
           ))}
-          {items.length === 0 && (
+          {(!items || items.length === 0) && (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-muted-foreground">
                 No items in bill
               </TableCell>
             </TableRow>
           )}
-          {items.length > 0 && (
+          {items?.length > 0 && (
             <TableRow>
               <TableCell colSpan={3} className="text-right font-bold">
                 Total:
               </TableCell>
               <TableCell className="text-right font-bold">
-                ₹{total.toFixed(2)}
+                ₹{(total || 0).toFixed(2)}
               </TableCell>
               <TableCell></TableCell>
             </TableRow>

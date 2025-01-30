@@ -12,16 +12,23 @@ const Billing = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load any saved current bill from localStorage
+  // Load any saved current bill from localStorage with null check
   useEffect(() => {
     const savedBill = localStorage.getItem('currentBill');
     if (savedBill) {
-      setCurrentBill(JSON.parse(savedBill));
+      try {
+        const parsedBill = JSON.parse(savedBill);
+        setCurrentBill(Array.isArray(parsedBill) ? parsedBill : []);
+      } catch (error) {
+        setCurrentBill([]);
+      }
     }
   }, []);
 
   const handleAddToBill = (billItem: BillItem) => {
-    const updatedBill = [...currentBill, billItem];
+    if (!billItem) return;
+    
+    const updatedBill = [...(currentBill || []), billItem];
     setCurrentBill(updatedBill);
     localStorage.setItem('currentBill', JSON.stringify(updatedBill));
     toast({
@@ -31,6 +38,8 @@ const Billing = () => {
   };
 
   const handleRemoveFromBill = (index: number) => {
+    if (index < 0 || !currentBill) return;
+    
     const updatedBill = currentBill.filter((_, i) => i !== index);
     setCurrentBill(updatedBill);
     localStorage.setItem('currentBill', JSON.stringify(updatedBill));
@@ -41,17 +50,23 @@ const Billing = () => {
   };
 
   const calculateTotal = () => {
-    return currentBill.reduce((total, item) => total + (item.quantity * item.sellingPrice), 0);
+    if (!currentBill?.length) return 0;
+    return currentBill.reduce((total, item) => 
+      total + ((item?.quantity || 0) * (item?.sellingPrice || 0)), 0);
   };
 
   const updateInventory = () => {
     const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
     
-    currentBill.forEach(billItem => {
-      const productIndex = products.findIndex(p => p.id === billItem.productId);
-      if (productIndex !== -1) {
-        products[productIndex].quantity -= billItem.quantity;
-        products[productIndex].status = products[productIndex].quantity === 0 ? "Out-of-Stock" : "In-Stock";
+    currentBill?.forEach(billItem => {
+      if (!billItem) return;
+      
+      const productIndex = products?.findIndex(p => p?.id === billItem?.productId);
+      if (productIndex !== -1 && products[productIndex]) {
+        products[productIndex].quantity = Math.max(0, 
+          (products[productIndex].quantity || 0) - (billItem?.quantity || 0));
+        products[productIndex].status = 
+          products[productIndex].quantity === 0 ? "Out-of-Stock" : "In-Stock";
       }
     });
 
@@ -59,7 +74,7 @@ const Billing = () => {
   };
 
   const handleCompleteBill = () => {
-    if (currentBill.length === 0) {
+    if (!currentBill?.length) {
       toast({
         title: "Error",
         description: "Cannot complete empty bill",
@@ -79,9 +94,10 @@ const Billing = () => {
     // Update inventory
     updateInventory();
 
-    // Save transaction
+    // Save transaction with null check
     const existingTransactions = JSON.parse(localStorage.getItem('billingTransactions') || '[]');
-    localStorage.setItem('billingTransactions', JSON.stringify([...existingTransactions, transaction]));
+    localStorage.setItem('billingTransactions', 
+      JSON.stringify([...(existingTransactions || []), transaction]));
 
     // Clear current bill
     setCurrentBill([]);
@@ -101,7 +117,7 @@ const Billing = () => {
       <BillingForm onAddToBill={handleAddToBill} />
       
       <BillingTable 
-        items={currentBill} 
+        items={currentBill || []}
         onRemoveItem={handleRemoveFromBill}
         total={calculateTotal()}
       />
@@ -109,7 +125,7 @@ const Billing = () => {
       <div className="mt-6">
         <Button 
           onClick={handleCompleteBill}
-          disabled={currentBill.length === 0}
+          disabled={!currentBill?.length}
           className="w-full md:w-auto"
         >
           Complete Bill

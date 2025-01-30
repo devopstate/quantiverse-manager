@@ -31,17 +31,19 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Get products from localStorage with proper initialization
+  // Get products from localStorage with proper initialization and null check
   const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
 
-  // Filter products based on search value
-  const filteredProducts = products.filter(product => 
-    product.title.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  // Filter products based on search value with null check
+  const filteredProducts = products?.filter(product => 
+    product?.title?.toLowerCase().includes(searchValue?.toLowerCase() || '')
+  ) || [];
 
   const handleProductSelect = (product: Product) => {
+    if (!product) return;
+    
     setSelectedProduct(product);
-    setSellingPrice(product.sellingPrice.toString());
+    setSellingPrice(product.sellingPrice?.toString() || '');
     setQuantity("");
     setOpen(false);
   };
@@ -56,7 +58,7 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
       return false;
     }
 
-    const qtyNum = parseInt(quantity);
+    const qtyNum = parseInt(quantity || '0');
     if (isNaN(qtyNum) || qtyNum <= 0) {
       toast({
         title: "Error",
@@ -66,7 +68,7 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
       return false;
     }
 
-    if (qtyNum > selectedProduct.quantity) {
+    if (qtyNum > (selectedProduct?.quantity || 0)) {
       toast({
         title: "Error",
         description: "Quantity exceeds available stock",
@@ -75,7 +77,7 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
       return false;
     }
 
-    const priceNum = parseFloat(sellingPrice);
+    const priceNum = parseFloat(sellingPrice || '0');
     if (isNaN(priceNum) || priceNum <= 0) {
       toast({
         title: "Error",
@@ -91,8 +93,8 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const handleAddToBill = () => {
     if (!validateInputs() || !selectedProduct) return;
 
-    const qtyNum = parseInt(quantity);
-    const priceNum = parseFloat(sellingPrice);
+    const qtyNum = parseInt(quantity || '0');
+    const priceNum = parseFloat(sellingPrice || '0');
 
     onAddToBill({
       productId: selectedProduct.id,
@@ -121,7 +123,7 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
               aria-expanded={open}
               className="justify-between"
             >
-              {selectedProduct ? selectedProduct.title : "Select product..."}
+              {selectedProduct?.title || "Select product..."}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[300px] p-0">
@@ -132,20 +134,22 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
                 onValueChange={setSearchValue}
               />
               <CommandGroup>
-                <CommandEmpty>No products found.</CommandEmpty>
+                {filteredProducts.length === 0 && (
+                  <CommandEmpty>No products found.</CommandEmpty>
+                )}
                 {filteredProducts.map((product) => (
                   <CommandItem
-                    key={product.id}
-                    value={product.title}
+                    key={product?.id}
+                    value={product?.title}
                     onSelect={() => handleProductSelect(product)}
-                    disabled={product.status === "Out-of-Stock"}
+                    disabled={product?.status === "Out-of-Stock"}
                     className={cn(
                       "flex items-center justify-between",
-                      product.status === "Out-of-Stock" && "opacity-50"
+                      product?.status === "Out-of-Stock" && "opacity-50"
                     )}
                   >
-                    <span>{product.title}</span>
-                    {selectedProduct?.id === product.id && (
+                    <span>{product?.title}</span>
+                    {selectedProduct?.id === product?.id && (
                       <Check className="h-4 w-4" />
                     )}
                   </CommandItem>
@@ -156,7 +160,7 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
         </Popover>
         {selectedProduct && (
           <span className="text-sm text-muted-foreground">
-            Available: {selectedProduct.quantity} units
+            Available: {selectedProduct?.quantity || 0} units
           </span>
         )}
       </div>
