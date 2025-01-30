@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/card";
 import { ChartLine, Calendar, Search } from "lucide-react";
 import { BillingTransaction } from "@/types/billing";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { addDays } from "date-fns";
+import { DateRange } from "react-day-picker";
 import {
   Table,
   TableBody,
@@ -24,7 +24,7 @@ const Sales = () => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
