@@ -46,13 +46,20 @@ const Sales = () => {
     }
   }, []);
 
-  const calculateTotalSales = () => {
-    return transactions.reduce((total, transaction) => total + (transaction.total || 0), 0);
+  const calculateTotalSales = (filteredTransactions: BillingTransaction[]) => {
+    return filteredTransactions.reduce((total, transaction) => total + (transaction.total || 0), 0);
   };
 
-  const calculateDailyAverage = () => {
-    if (transactions.length === 0) return 0;
-    return calculateTotalSales() / transactions.length;
+  const calculateDailyAverage = (filteredTransactions: BillingTransaction[]) => {
+    if (filteredTransactions.length === 0) return 0;
+    
+    if (!dateRange?.from || !dateRange?.to) {
+      return calculateTotalSales(filteredTransactions) / filteredTransactions.length;
+    }
+
+    // Calculate the number of days in the date range
+    const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return calculateTotalSales(filteredTransactions) / daysDiff;
   };
 
   const calculatePnL = (purchasePrice: number, sellingPrice: number, quantity: number) => {
@@ -119,7 +126,7 @@ const Sales = () => {
             <ChartLine className="h-8 w-8 text-primary" />
             <div>
               <p className="text-sm text-gray-500">Total Sales</p>
-              <p className="text-2xl font-bold">{formatCurrency(calculateTotalSales())}</p>
+              <p className="text-2xl font-bold">{formatCurrency(calculateTotalSales(filteredAndSortedTransactions))}</p>
             </div>
           </div>
         </Card>
@@ -128,7 +135,7 @@ const Sales = () => {
             <Calendar className="h-8 w-8 text-primary" />
             <div>
               <p className="text-sm text-gray-500">Daily Average</p>
-              <p className="text-2xl font-bold">{formatCurrency(calculateDailyAverage())}</p>
+              <p className="text-2xl font-bold">{formatCurrency(calculateDailyAverage(filteredAndSortedTransactions))}</p>
             </div>
           </div>
         </Card>
