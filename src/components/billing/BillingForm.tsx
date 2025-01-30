@@ -131,8 +131,8 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
                 value={searchValue}
                 onValueChange={setSearchValue}
               />
-              <CommandEmpty>No products found.</CommandEmpty>
               <CommandGroup>
+                <CommandEmpty>No products found.</CommandEmpty>
                 {filteredProducts.map((product) => (
                   <CommandItem
                     key={product.id}
