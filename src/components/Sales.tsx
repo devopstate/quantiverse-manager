@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ChartLine, Calendar } from "lucide-react";
+import { ChartLine, Calendar, Search } from "lucide-react";
 import { BillingTransaction } from "@/types/billing";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { addDays } from "date-fns";
 import {
   Table,
   TableBody,
@@ -11,8 +15,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+};
+
 const Sales = () => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
+  const [dateRange, setDateRange] = useState({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
 
   // Load transactions from localStorage on component mount
   useEffect(() => {
@@ -51,6 +66,41 @@ const Sales = () => {
     return `₹${value.toFixed(2)}`;
   };
 
+  const handleSort = (key: string) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const filteredAndSortedTransactions = transactions
+    .filter(transaction => {
+      // Date range filter
+      const transactionDate = new Date(transaction.date);
+      const isWithinDateRange = (!dateRange.from || transactionDate >= dateRange.from) &&
+                               (!dateRange.to || transactionDate <= dateRange.to);
+
+      // Search filter
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = transaction.items.some(item =>
+        item.productTitle.toLowerCase().includes(searchLower) ||
+        item.purchasePrice.toString().includes(searchLower) ||
+        item.sellingPrice.toString().includes(searchLower) ||
+        item.quantity.toString().includes(searchLower)
+      ) ||
+      transaction.id.toLowerCase().includes(searchLower) ||
+      transaction.date.toLocaleDateString().includes(searchLower);
+
+      return isWithinDateRange && matchesSearch;
+    })
+    .sort((a, b) => {
+      const direction = sortConfig.direction === 'asc' ? 1 : -1;
+      if (sortConfig.key === 'date') {
+        return (new Date(a.date).getTime() - new Date(b.date).getTime()) * direction;
+      }
+      return 0;
+    });
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Sales Overview</h1>
@@ -75,13 +125,33 @@ const Sales = () => {
         </Card>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search transactions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <DatePickerWithRange
+          date={dateRange}
+          onDateChange={setDateRange}
+        />
+      </div>
+
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Transaction ID</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead onClick={() => handleSort('id')} className="cursor-pointer">
+                Transaction ID {sortConfig.key === 'id' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('date')} className="cursor-pointer">
+                Date {sortConfig.key === 'date' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </TableHead>
               <TableHead>Product Details</TableHead>
               <TableHead className="text-right">Purchase Price</TableHead>
               <TableHead className="text-right">Selling Price</TableHead>
@@ -92,7 +162,7 @@ const Sales = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
+            {filteredAndSortedTransactions.map((transaction) => (
               <>
                 {transaction.items.map((item, itemIndex) => (
                   <TableRow key={`${transaction.id}-${itemIndex}`}>
@@ -125,7 +195,7 @@ const Sales = () => {
                 ))}
               </>
             ))}
-            {transactions.length === 0 && (
+            {filteredAndSortedTransactions.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground">
                   No transactions found
