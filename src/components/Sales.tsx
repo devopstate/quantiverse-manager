@@ -80,15 +80,15 @@ const Sales = () => {
       const isWithinDateRange = (!dateRange.from || transactionDate >= dateRange.from) &&
                                (!dateRange.to || transactionDate <= dateRange.to);
 
-      // Search filter
+      // Search filter - safely handle undefined values
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = transaction.items.some(item =>
-        item.productTitle.toLowerCase().includes(searchLower) ||
-        item.purchasePrice.toString().includes(searchLower) ||
-        item.sellingPrice.toString().includes(searchLower) ||
-        item.quantity.toString().includes(searchLower)
+        (item.productTitle || '').toLowerCase().includes(searchLower) ||
+        (item.purchasePrice?.toString() || '').includes(searchLower) ||
+        (item.sellingPrice?.toString() || '').includes(searchLower) ||
+        (item.quantity?.toString() || '').includes(searchLower)
       ) ||
-      transaction.id.toLowerCase().includes(searchLower) ||
+      (transaction.id || '').toLowerCase().includes(searchLower) ||
       transaction.date.toLocaleDateString().includes(searchLower);
 
       return isWithinDateRange && matchesSearch;
