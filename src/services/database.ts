@@ -18,7 +18,17 @@ db.exec(`
 `);
 
 export const getAllProducts = (): Product[] => {
-  const products = db.prepare('SELECT * FROM products').all();
+  const products = db.prepare('SELECT * FROM products').all() as Array<{
+    id: number;
+    category: string;
+    title: string;
+    purchasePrice: number;
+    sellingPrice: number;
+    quantity: number;
+    status: string;
+    createdAt: string;
+  }>;
+  
   return products.map(product => ({
     ...product,
     createdAt: new Date(product.createdAt)
@@ -41,7 +51,7 @@ export const addProduct = (product: Omit<Product, 'id' | 'status' | 'createdAt'>
   });
 
   return {
-    id: info.lastInsertRowid as number,
+    id: Number(info.lastInsertRowid),
     ...product,
     status,
     createdAt: new Date(createdAt)
