@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { ChartLine, Calendar } from "lucide-react";
 import { BillingTransaction } from "@/types/billing";
+import { DateRange } from "react-day-picker";
 
 interface SalesStatsProps {
   filteredTransactions: BillingTransaction[];
-  dateRange: { from: Date; to: Date } | undefined;
+  dateRange: DateRange | undefined;
 }
 
 const SalesStats = ({ filteredTransactions, dateRange }: SalesStatsProps) => {
