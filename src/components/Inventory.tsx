@@ -3,39 +3,48 @@ import { Product } from "@/types/inventory";
 import { ProductForm } from "./inventory/ProductForm";
 import { ProductTable } from "./inventory/ProductTable";
 import { TablePagination } from "./inventory/TablePagination";
+import { getAllProducts, addProduct, updateProduct } from "@/services/database";
+import { useToast } from "@/hooks/use-toast";
 
 const Inventory = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Product>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const { toast } = useToast();
   
   const itemsPerPage = 5;
 
-  // Load products from localStorage on component mount
+  // Load products from database on component mount
   useEffect(() => {
-    const savedProducts = localStorage.getItem('products');
-    if (savedProducts) {
-      const parsedProducts = JSON.parse(savedProducts).map((product: any) => ({
-        ...product,
-        createdAt: new Date(product.createdAt)
-      }));
-      setProducts(parsedProducts);
+    try {
+      const dbProducts = getAllProducts();
+      setProducts(dbProducts);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load products from database",
+        variant: "destructive",
+      });
     }
   }, []);
 
   const handleAddProduct = (newProductData: Omit<Product, 'id' | 'status' | 'createdAt'>) => {
-    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-    const product: Product = {
-      id: newId,
-      ...newProductData,
-      status: newProductData.quantity === 0 ? "Out-of-Stock" : "In-Stock",
-      createdAt: new Date(),
-    };
-
-    const updatedProducts = [...products, product];
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    try {
+      const product = addProduct(newProductData);
+      setProducts(prev => [...prev, product]);
+      
+      toast({
+        title: "Success",
+        description: "Product added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add product to database",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSort = (field: keyof Product) => {
@@ -44,15 +53,23 @@ const Inventory = () => {
   };
 
   const handleUpdateProduct = (updatedProduct: Product) => {
-    const productWithStatus = {
-      ...updatedProduct,
-      status: updatedProduct.quantity === 0 ? "Out-of-Stock" : "In-Stock"
-    };
-    const updatedProducts = products.map(p => 
-      p.id === productWithStatus.id ? productWithStatus : p
-    );
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    try {
+      const product = updateProduct(updatedProduct);
+      setProducts(prev => 
+        prev.map(p => p.id === product.id ? product : p)
+      );
+      
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update product in database",
+        variant: "destructive",
+      });
+    }
   };
 
   // Sort and paginate products
