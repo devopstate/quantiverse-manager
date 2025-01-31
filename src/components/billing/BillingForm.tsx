@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Product } from "@/types/inventory";
 import { BillItem } from "@/types/billing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BillingFormProps {
   onAddToBill: (item: BillItem) => void;
@@ -22,17 +28,26 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
+  const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   // Get products from localStorage with proper initialization and null check
   const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
 
-  const handleProductSelect = (productId: string) => {
-    const product = products.find(p => p?.id.toString() === productId);
+  const filteredProducts = useMemo(() => {
+    if (!searchValue) return products;
+    return products.filter(product => 
+      product?.title?.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [products, searchValue]);
+
+  const handleProductSelect = (product: Product) => {
     if (!product) return;
     
     setSelectedProduct(product);
     setSellingPrice(product.sellingPrice?.toString() || '');
     setQuantity("");
+    setOpen(false);
   };
 
   const validateInputs = () => {
@@ -101,28 +116,54 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div className="flex flex-col gap-2">
-        <Select
-          value={selectedProduct?.id?.toString()}
-          onValueChange={handleProductSelect}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select product..." />
-          </SelectTrigger>
-          <SelectContent>
-            {products.map((product) => (
-              <SelectItem
-                key={product?.id}
-                value={product?.id?.toString()}
-                disabled={product?.status === "Out-of-Stock"}
-              >
-                {product?.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="justify-between"
+            >
+              {selectedProduct ? selectedProduct.title : "Select product..."}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[300px] p-0">
+            <Command>
+              <CommandInput 
+                placeholder="Search products..." 
+                value={searchValue}
+                onValueChange={setSearchValue}
+              />
+              <CommandEmpty>No products found.</CommandEmpty>
+              <CommandGroup>
+                {filteredProducts.map((product) => (
+                  <CommandItem
+                    key={product.id}
+                    value={product.title}
+                    onSelect={() => handleProductSelect(product)}
+                    disabled={product.status === "Out-of-Stock"}
+                    className="flex justify-between"
+                  >
+                    <span>{product.title}</span>
+                    <span className={cn(
+                      "px-2 py-1 rounded text-xs",
+                      product.status === "Out-of-Stock" 
+                        ? "bg-red-100 text-red-800"
+                        : "bg-green-100 text-green-800"
+                    )}>
+                      {product.status === "Out-of-Stock" 
+                        ? "Out of Stock" 
+                        : `${product.quantity} available`}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
         {selectedProduct && (
           <span className="text-sm text-muted-foreground">
-            Available: {selectedProduct?.quantity || 0} units
+            Available: {selectedProduct.quantity} units
           </span>
         )}
       </div>

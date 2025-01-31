@@ -6,6 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import { ProductTableHeader } from "./table/TableHeader";
 import { EditableCell } from "./table/EditableCell";
 import { ActionButton } from "./table/ActionButton";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProductTableProps {
   products: Product[];
@@ -18,11 +26,26 @@ interface ProductTableProps {
 export const ProductTable = ({
   products,
   onSort,
+  sortField,
+  sortDirection,
   onUpdateProduct,
 }: ProductTableProps) => {
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingValues, setEditingValues] = useState<Partial<Product>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Filter products based on search term and filters
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
+    const matchesStatus = statusFilter === "all" || product.status === statusFilter;
+    
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   const handleEdit = (product: Product) => {
     setEditingId(product.id);
@@ -114,10 +137,41 @@ export const ProductTable = ({
   };
 
   return (
-    <Table>
-      <ProductTableHeader onSort={onSort} />
-      <TableBody>
-        {products.map((product) => (
+    <div>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Input
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="md:w-1/3"
+        />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="md:w-1/4">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="electronics">Electronics</SelectItem>
+            <SelectItem value="clothing">Clothing</SelectItem>
+            <SelectItem value="food">Food</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="md:w-1/4">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="In-Stock">In Stock</SelectItem>
+            <SelectItem value="Out-of-Stock">Out of Stock</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Table>
+        <ProductTableHeader onSort={onSort} />
+        <TableBody>
+          {filteredProducts.map((product) => (
           <TableRow key={product.id}>
             <TableCell>{format(product.createdAt, 'dd/MM/yyyy')}</TableCell>
             <TableCell>
@@ -172,8 +226,9 @@ export const ProductTable = ({
               />
             </TableCell>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };

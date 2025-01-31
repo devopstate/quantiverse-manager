@@ -21,6 +21,8 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const Sales = () => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,6 +31,7 @@ const Sales = () => {
     from: addDays(new Date(), -30),
     to: new Date(),
   });
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Load transactions from localStorage on component mount
   useEffect(() => {
@@ -145,6 +148,14 @@ const Sales = () => {
       return 0;
     });
 
+  // Paginate the transactions
+  const paginatedTransactions = filteredAndSortedTransactions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const totalPages = Math.ceil(filteredAndSortedTransactions.length / ITEMS_PER_PAGE);
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Sales Overview</h1>
@@ -233,16 +244,22 @@ const Sales = () => {
                 Date {sortConfig.key === 'date' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead>Product Details</TableHead>
-              <TableHead className="text-right">Purchase Price</TableHead>
-              <TableHead className="text-right">Selling Price</TableHead>
-              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right cursor-pointer" onClick={() => handleSort('purchasePrice')}>
+                Purchase Price {sortConfig.key === 'purchasePrice' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead className="text-right cursor-pointer" onClick={() => handleSort('sellingPrice')}>
+                Selling Price {sortConfig.key === 'sellingPrice' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead className="text-right cursor-pointer" onClick={() => handleSort('quantity')}>
+                Quantity {sortConfig.key === 'quantity' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </TableHead>
               <TableHead className="text-right">Item Total</TableHead>
               <TableHead className="text-right">P&L</TableHead>
               <TableHead className="text-right">Total Billed Amt</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedTransactions.map((transaction) => (
+            {paginatedTransactions.map((transaction) => (
               <>
                 {transaction.items.map((item, itemIndex) => (
                   <TableRow key={`${transaction.id}-${itemIndex}`}>
@@ -275,7 +292,7 @@ const Sales = () => {
                 ))}
               </>
             ))}
-            {filteredAndSortedTransactions.length === 0 && (
+            {paginatedTransactions.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground">
                   No transactions found
@@ -284,6 +301,35 @@ const Sales = () => {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-4 flex justify-center">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );
