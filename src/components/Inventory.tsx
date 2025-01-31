@@ -11,27 +11,35 @@ const Inventory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof Product>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
   const itemsPerPage = 5;
 
   // Load products from database on component mount
   useEffect(() => {
-    try {
-      const dbProducts = getAllProducts();
-      setProducts(dbProducts);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load products from database",
-        variant: "destructive",
-      });
-    }
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const dbProducts = await getAllProducts();
+        setProducts(dbProducts);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load products from database",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
-  const handleAddProduct = (newProductData: Omit<Product, 'id' | 'status' | 'createdAt'>) => {
+  const handleAddProduct = async (newProductData: Omit<Product, 'id' | 'status' | 'createdAt'>) => {
     try {
-      const product = addProduct(newProductData);
+      const product = await addProduct(newProductData);
       setProducts(prev => [...prev, product]);
       
       toast({
@@ -52,9 +60,9 @@ const Inventory = () => {
     setSortField(field);
   };
 
-  const handleUpdateProduct = (updatedProduct: Product) => {
+  const handleUpdateProduct = async (updatedProduct: Product) => {
     try {
-      const product = updateProduct(updatedProduct);
+      const product = await updateProduct(updatedProduct);
       setProducts(prev => 
         prev.map(p => p.id === product.id ? product : p)
       );
@@ -85,6 +93,10 @@ const Inventory = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  if (isLoading) {
+    return <div className="p-6">Loading...</div>;
+  }
 
   return (
     <div className="p-6">
