@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Product } from "@/types/inventory";
 import { BillItem } from "@/types/billing";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Check } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getAllProducts } from "@/services/database";
 
 interface BillingFormProps {
   onAddToBill: (item: BillItem) => void;
@@ -30,9 +31,26 @@ export const BillingForm = ({ onAddToBill }: BillingFormProps) => {
   const [sellingPrice, setSellingPrice] = useState("");
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
 
-  // Get products from localStorage with proper initialization and null check
-  const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
+  // Fetch products using the database service
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const fetchedProducts = await getAllProducts();
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch products",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchProducts();
+  }, [toast]);
 
   const filteredProducts = useMemo(() => {
     if (!searchValue) return products;
