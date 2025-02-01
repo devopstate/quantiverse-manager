@@ -19,11 +19,14 @@ const Inventory = () => {
   // Load products from database on component mount
   useEffect(() => {
     const fetchProducts = async () => {
+      console.log("Attempting to fetch products...");
       setIsLoading(true);
       try {
         const dbProducts = await getAllProducts();
+        console.log("Products fetched successfully:", dbProducts);
         setProducts(dbProducts);
       } catch (error) {
+        console.error("Error fetching products:", error);
         toast({
           title: "Error",
           description: "Failed to load products from database",
@@ -38,8 +41,10 @@ const Inventory = () => {
   }, []);
 
   const handleAddProduct = async (newProductData: Omit<Product, 'id' | 'status' | 'createdAt'>) => {
+    console.log("Attempting to add product:", newProductData);
     try {
       const product = await addProduct(newProductData);
+      console.log("Product added successfully:", product);
       setProducts(prev => [...prev, product]);
       
       toast({
@@ -47,6 +52,7 @@ const Inventory = () => {
         description: "Product added successfully",
       });
     } catch (error) {
+      console.error("Error adding product:", error);
       toast({
         title: "Error",
         description: "Failed to add product to database",
@@ -61,8 +67,10 @@ const Inventory = () => {
   };
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
+    console.log("Attempting to update product:", updatedProduct);
     try {
       const product = await updateProduct(updatedProduct);
+      console.log("Product updated successfully:", product);
       setProducts(prev => 
         prev.map(p => p.id === product.id ? product : p)
       );
@@ -72,6 +80,7 @@ const Inventory = () => {
         description: "Product updated successfully",
       });
     } catch (error) {
+      console.error("Error updating product:", error);
       toast({
         title: "Error",
         description: "Failed to update product in database",
