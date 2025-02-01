@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on tcp:8080 && electron electron/main.js\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:start": "electron .",
     "lint": "eslint .",
     "preview": "vite preview"
   },
