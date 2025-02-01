@@ -6,6 +6,7 @@ import { BillingTable } from "./billing/BillingTable";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import { getAllProducts, updateProduct } from "@/services/database";
 
 const Billing = () => {
   const [currentBill, setCurrentBill] = useState<BillItem[]>([]);
@@ -55,25 +56,33 @@ const Billing = () => {
       total + ((item?.quantity || 0) * (item?.sellingPrice || 0)), 0);
   };
 
-  const updateInventory = () => {
-    const products: Product[] = JSON.parse(localStorage.getItem('products') || '[]');
-    
-    currentBill?.forEach(billItem => {
-      if (!billItem) return;
+  const updateInventory = async () => {
+    try {
+      const products = await getAllProducts();
       
-      const productIndex = products?.findIndex(p => p?.id === billItem?.productId);
-      if (productIndex !== -1 && products[productIndex]) {
-        products[productIndex].quantity = Math.max(0, 
-          (products[productIndex].quantity || 0) - (billItem?.quantity || 0));
-        products[productIndex].status = 
-          products[productIndex].quantity === 0 ? "Out-of-Stock" : "In-Stock";
-      }
-    });
+      for (const billItem of currentBill || []) {
+        if (!billItem) continue;
+        
+        const product = products.find(p => p.id === billItem.productId);
+        if (!product) continue;
 
-    localStorage.setItem('products', JSON.stringify(products));
+        const updatedProduct = {
+          ...product,
+          quantity: Math.max(0, (product.quantity || 0) - (billItem.quantity || 0)),
+        };
+        
+        // Update product status based on new quantity
+        updatedProduct.status = updatedProduct.quantity === 0 ? "Out-of-Stock" : "In-Stock";
+        
+        await updateProduct(updatedProduct);
+      }
+    } catch (error) {
+      console.error("Error updating inventory:", error);
+      throw new Error("Failed to update inventory");
+    }
   };
 
-  const handleCompleteBill = () => {
+  const handleCompleteBill = async () => {
     if (!currentBill?.length) {
       toast({
         title: "Error",
@@ -83,31 +92,40 @@ const Billing = () => {
       return;
     }
 
-    const transaction: BillingTransaction = {
-      id: Date.now().toString(),
-      items: [...currentBill],
-      total: calculateTotal(),
-      date: new Date(),
-      status: 'completed'
-    };
+    try {
+      // Update inventory first
+      await updateInventory();
 
-    // Update inventory
-    updateInventory();
+      const transaction: BillingTransaction = {
+        id: Date.now().toString(),
+        items: [...currentBill],
+        total: calculateTotal(),
+        date: new Date(),
+        status: 'completed'
+      };
 
-    // Save transaction with null check
-    const existingTransactions = JSON.parse(localStorage.getItem('billingTransactions') || '[]');
-    localStorage.setItem('billingTransactions', 
-      JSON.stringify([...(existingTransactions || []), transaction]));
+      // Save transaction
+      const existingTransactions = JSON.parse(localStorage.getItem('billingTransactions') || '[]');
+      localStorage.setItem('billingTransactions', 
+        JSON.stringify([...(existingTransactions || []), transaction]));
 
-    // Clear current bill
-    setCurrentBill([]);
-    localStorage.removeItem('currentBill');
-    
-    toast({
-      title: "Success",
-      description: "Bill completed successfully",
-    });
-    navigate('/sales');
+      // Clear current bill
+      setCurrentBill([]);
+      localStorage.removeItem('currentBill');
+      
+      toast({
+        title: "Success",
+        description: "Bill completed successfully",
+      });
+      navigate('/sales');
+    } catch (error) {
+      console.error("Error completing bill:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete bill. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
