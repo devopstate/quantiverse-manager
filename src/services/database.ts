@@ -1,57 +1,56 @@
 import { Product } from '@/types/inventory';
 
-const API_URL = 'http://localhost:3001/api';
+const STORAGE_KEY = 'inventory_products';
 
-export const getAllProducts = async (): Promise<Product[]> => {
-  const response = await fetch(`${API_URL}/products`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch products');
-  }
-  const products = await response.json();
-  return products.map((product: any) => ({
+// Helper function to get products from localStorage
+const getStoredProducts = (): Product[] => {
+  const storedData = localStorage.getItem(STORAGE_KEY);
+  if (!storedData) return [];
+  return JSON.parse(storedData).map((product: any) => ({
     ...product,
     createdAt: new Date(product.createdAt)
   }));
 };
 
+// Helper function to save products to localStorage
+const saveProducts = (products: Product[]) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+};
+
+export const getAllProducts = async (): Promise<Product[]> => {
+  console.log("Fetching products from localStorage");
+  return getStoredProducts();
+};
+
 export const addProduct = async (
   product: Omit<Product, 'id' | 'status' | 'createdAt'>
 ): Promise<Product> => {
-  const response = await fetch(`${API_URL}/products`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(product),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to add product');
-  }
-  
-  const newProduct = await response.json();
-  return {
-    ...newProduct,
-    createdAt: new Date(newProduct.createdAt)
+  const products = getStoredProducts();
+  const newProduct = {
+    id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
+    ...product,
+    status: product.quantity === 0 ? "Out-of-Stock" : "In-Stock",
+    createdAt: new Date()
   };
+  
+  products.push(newProduct);
+  saveProducts(products);
+  return newProduct;
 };
 
 export const updateProduct = async (product: Product): Promise<Product> => {
-  const response = await fetch(`${API_URL}/products/${product.id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(product),
-  });
+  const products = getStoredProducts();
+  const updatedProduct = {
+    ...product,
+    status: product.quantity === 0 ? "Out-of-Stock" : "In-Stock"
+  };
   
-  if (!response.ok) {
-    throw new Error('Failed to update product');
+  const index = products.findIndex(p => p.id === product.id);
+  if (index === -1) {
+    throw new Error('Product not found');
   }
   
-  const updatedProduct = await response.json();
-  return {
-    ...updatedProduct,
-    createdAt: new Date(updatedProduct.createdAt)
-  };
+  products[index] = updatedProduct;
+  saveProducts(products);
+  return updatedProduct;
 };
