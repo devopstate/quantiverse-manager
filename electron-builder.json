@@ -1,0 +1,20 @@
+{
+  "appId": "com.inventory.app",
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "directories": {
+    "buildResources": "assets",
+    "output": "release"
+  },
+  "win": {
+    "target": "nsis"
+  },
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage"
+  }
+}
